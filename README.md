@@ -45,12 +45,12 @@ Low-cost MEMS accelerometers suffer from continuous DC bias. Integrating acceler
 SPANDAN solves this by **reversing the workflow**: a neural network directly models continuous displacement $u(t)$, and PyTorch Autograd differentiates downward to match raw sensor acceleration:
 $$\dot{u}(t) = \frac{\partial u}{\partial t}, \quad \ddot{u}(t) = \frac{\partial^2 u}{\partial t^2}$$
 ### Governing Equations & Loss Functions
-- **Tier 1 (Lumped Oscillator ODE):**  
-  $$\ddot{u}(t) + 2\beta \dot{u}(t) + \omega_n^2 u(t) = 0 \quad \text{where } \omega_n^2 = \frac{k}{m}$$  
-  $$\mathcal{L}_{\text{Tier1}} = \text{MSE}(\ddot{\hat{u}} - a_{\text{sensor}}) + \lambda_{\text{phys}} \text{MSE}(\ddot{\hat{u}} + 2\vert{}\beta\vert{}\dot{\hat{u}} + \vert{}\omega_n^2\vert{}\hat{u})$$
-- **Tier 2 (Continuous Wave PDE):**  
-  $$\frac{\partial^2 u}{\partial t^2} - c^2(x) \frac{\partial^2 u}{\partial x^2} = 0 \quad \text{where } c^2(x) = \frac{E(x)}{\rho}$$  
-  $$\mathcal{L}_{\text{Tier2}} = \text{MSE}(\ddot{\hat{u}} - a_{\text{sensor}}) + \lambda_{\text{pde}} \left\Vert{}\frac{\partial^2 \hat{u}}{\partial t^2} - c^2 \frac{\partial^2 \hat{u}}{\partial x^2}\right\Vert{}^2 + \lambda_{\text{bc}} \left(\Vert{}\hat{u}(0, t)\Vert{}^2 + \Vert{}\hat{u}(L, t)\Vert{}^2\right)$$
+**Tier 1 (Lumped Oscillator ODE):**
+$$\ddot{u}(t) + 2\beta \dot{u}(t) + \omega_n^2 u(t) = 0 \quad \text{where } \omega_n^2 = \frac{k}{m}$$
+$$\mathcal{L}_{\text{Tier1}} = \text{MSE}(\ddot{\hat{u}} - a_{\text{sensor}}) + \lambda_{\text{phys}} \text{MSE}\left(\ddot{\hat{u}} + 2\vert{}\beta\vert{}\dot{\hat{u}} + \vert{}\omega_n^2\vert{}\hat{u}\right)$$
+**Tier 2 (Continuous Wave PDE):**
+$$\frac{\partial^2 u}{\partial t^2} - c^2(x) \frac{\partial^2 u}{\partial x^2} = 0 \quad \text{where } c^2(x) = \frac{E(x)}{\rho}$$
+$$\mathcal{L}_{\text{Tier2}} = \text{MSE}(\ddot{\hat{u}} - a_{\text{sensor}}) + \lambda_{\text{pde}} \left\Vert{} \frac{\partial^2 \hat{u}}{\partial t^2} - c^2 \frac{\partial^2 \hat{u}}{\partial x^2} \right\Vert{}^2 + \lambda_{\text{bc}} \left( \Vert{}\hat{u}(0, t)\Vert{}^2 + \Vert{}\hat{u}(L, t)\Vert{}^2 \right)$$
 ---
 ## 5. In-Silico Empirical Validation (TRL-4 Benchmark)
 Tested under **5% Gaussian white noise** (modeling real-world MPU-6050 sensor jitter) across 2,000 spatiotemporal sample points on GPU (CUDA):
@@ -96,7 +96,7 @@ spandan-shm/
 ## 9. Quickstart & Reproduction
 ### Installation
 ```bash
-git clone https://github.com/Parth-Bedi/spandan-shm.git
+git clone [https://github.com/Parth-Bedi/spandan-shm.git](https://github.com/Parth-Bedi/spandan-shm.git)
 cd spandan-shm
 pip install -r requirements.txt
 ```
@@ -126,6 +126,6 @@ Licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for d
   year = {2026},
   publisher = {GitHub},
   journal = {Seva First Innovation Challenge 2026},
-  howpublished = {\url{https://github.com/Parth-Bedi/spandan-shm}}
+  howpublished = {\url{[https://github.com/Parth-Bedi/spandan-shm](https://github.com/Parth-Bedi/spandan-shm)}}
 }
 ```

@@ -2,9 +2,9 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg)](https://pytorch.org/)
-[![TRL](https://img.shields.io/badge/TRL-4_(Lab_Validated)-success.svg)]()
-[![Theme](https://img.shields.io/badge/SFIC_2026-Surakshit_Bharat-orange.svg)]()
-[![Target](https://img.shields.io/badge/District-Churu,_Rajasthan-brightgreen.svg)]()
+[![TRL](https://img.shields.io/badge/TRL-4_(Lab_Validated)-success.svg)](https://github.com/Parth-Bedi/spandan-shm)
+[![Theme](https://img.shields.io/badge/SFIC_2026-Surakshit_Bharat-orange.svg)](https://github.com/Parth-Bedi/spandan-shm)
+[![Target](https://img.shields.io/badge/District-Churu,_Rajasthan-brightgreen.svg)](https://github.com/Parth-Bedi/spandan-shm)
 > **Dual-Tier Physics-Informed Edge-Elastodynamics for Predictive Structural Health Monitoring of Rural Infrastructure**  
 > *Developed for the Seva First Innovation Challenge (SFIC) 2026 | Junior Track (Surakshit Bharat)*
 ---
@@ -53,14 +53,14 @@ $$\dot{u}(t) = \frac{\partial u}{\partial t}, \quad \ddot{u}(t) = \frac{\partial
   $$\mathcal{L}_{\text{Tier2}} = \text{MSE}(\ddot{\hat{u}} - a_{\text{sensor}}) + \lambda_{\text{pde}} \left\Vert{}\frac{\partial^2 \hat{u}}{\partial t^2} - c^2 \frac{\partial^2 \hat{u}}{\partial x^2}\right\Vert{}^2 + \lambda_{\text{bc}} \left(\Vert{}\hat{u}(0, t)\Vert{}^2 + \Vert{}\hat{u}(L, t)\Vert{}^2\right)$$
 ---
 ## 5. In-Silico Empirical Validation (TRL-4 Benchmark)
-Tested under **5% Gaussian white noise** (modeling real-world MPU-6050 sensor jitter) across 2,000 spatiotemporal sample points:
+Tested under **5% Gaussian white noise** (modeling real-world MPU-6050 sensor jitter) across 2,000 spatiotemporal sample points on GPU (CUDA):
 
 | Diagnostic Tier & State | Ground Truth Parameter | PINN Discovered Parameter | Inversion Error | Operational Decision |
 | :--- | :--- | :--- | :--- | :--- |
-| **Tier 1: Intact Baseline Sentry** | $\omega_n^2 = 64.00$ | $\omega_n^2 = \mathbf{64.02}$ | **0.03%** | 🟢 Nominal (Green) |
-| **Tier 1: Damaged (Crack)** | $\omega_n^2 = 38.40$ | $\omega_n^2 = \mathbf{38.37}$ | **0.08%** | 🚨 **40.06% Drop Flagged (8.49 s)** |
-| **Tier 2: Intact Waveguide** | $c^2 = 4.000$ | $c^2 = \mathbf{3.553}$ | Baseline Ratio | Baseline Structural Waveguide Locked |
-| **Tier 2: Damaged (Micro-Crack)** | $c^2 = 1.000$ | $c^2 = \mathbf{0.964}$ | **3.60%** | 🚨 **72.90% Localized Loss Confirmed** |
+| **Tier 1: Intact Baseline Sentry** | $\omega_n^2 = 64.00$ | $\omega_n^2 = \mathbf{63.54}$ | **0.73%** | 🟢 Nominal Stability (5.81 s) |
+| **Tier 1: Damaged (Crack)** | $\omega_n^2 = 38.40$ | $\omega_n^2 = \mathbf{38.36}$ | **0.10%** | 🚨 **39.62% Drop Flagged (5.49 s)** |
+| **Tier 2: Intact Waveguide** | $c^2 = 4.000$ | $c^2 = \mathbf{4.016}$ | **0.40%** | 🟢 **Baseline Waveguide Locked (9.18 s)** |
+| **Tier 2: Damaged (Micro-Crack)** | $c^2 = 1.000$ | $c^2 = \mathbf{1.014}$ | **1.37%** | 🚨 **74.76% Localized Loss Confirmed (9.17 s)** |
 
 ---
 ## 6. Actionable Civic Triage Protocol
@@ -96,7 +96,7 @@ spandan-shm/
 ## 9. Quickstart & Reproduction
 ### Installation
 ```bash
-git clone [https://github.com/](https://github.com/)<your-username>/spandan-shm.git
+git clone https://github.com/Parth-Bedi/spandan-shm.git
 cd spandan-shm
 pip install -r requirements.txt
 ```
@@ -121,11 +121,11 @@ python tier2_spatial_real.py
 Licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
 ```bibtex
 @misc{spandan2026,
-  author = {[Your Name / Team Project SPANDAN]},
+  author = {Parth Bedi},
   title = {Project SPANDAN: Structural Pulse & Ambient Neural Diagnostic Array Network},
   year = {2026},
   publisher = {GitHub},
   journal = {Seva First Innovation Challenge 2026},
-  howpublished = {\url{[https://github.com/](https://github.com/)<your-username>/spandan-shm}}
+  howpublished = {\url{https://github.com/Parth-Bedi/spandan-shm}}
 }
 ```

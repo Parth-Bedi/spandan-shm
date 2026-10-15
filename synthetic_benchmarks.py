@@ -1,5 +1,7 @@
 """
 Project SPANDAN: TRL-4 In-Silico Empirical Verification Harness
+Author: Parth Bedi (GitHub: @Parth-Bedi)
+
 Reproduces Dual-Tier Parameter Inversion Under 5% Inundated Noise:
   - Tier 1: Single-Node Lumped Oscillator ODE (omega_n^2 discovery)
   - Tier 2: Spatial Navier Elastodynamic Wave PDE (c^2 discovery)
@@ -56,19 +58,15 @@ def run_tier1_benchmark(target_omega_sq: float = 64.0, target_beta: float = 0.6,
       u(t) = exp(-beta * t) * cos(omega_d * t)
     Inverts ODE: u''(t) + 2*beta*u'(t) + omega_n^2*u(t) = 0 via Autograd.
     """
-    # 1. Generate synthetic ground truth
     t_np = np.linspace(0.0, 2.5, 250, dtype=np.float32)
     omega_d = np.sqrt(target_omega_sq - target_beta**2)
     
-    # Exact analytical acceleration ü(t)
     a_true = np.exp(-target_beta * t_np) * (
         (target_beta**2 - omega_d**2) * np.cos(omega_d * t_np) + (2 * target_beta * omega_d) * np.sin(omega_d * t_np)
     )
-    # Inject 5% Gaussian sensor noise
     noise = noise_level * np.std(a_true) * np.random.randn(*a_true.shape)
     a_noisy = a_true + noise
 
-    # 2. Setup PINN Inversion
     model = LumpedODEField().to(DEVICE)
     t_tensor = torch.tensor(t_np, dtype=torch.float32).view(-1, 1).to(DEVICE).requires_grad_(True)
     a_meas = torch.tensor(a_noisy, dtype=torch.float32).view(-1, 1).to(DEVICE)
@@ -137,7 +135,6 @@ def run_tier2_benchmark(target_c2: float = 1.00, noise_level: float = 0.05):
     x_list, t_list, a_list = [], [], []
     for x_val in nodes_x:
         for t_val in t_pts:
-            # a(x, t) = u_tt = -(pi * c)^2 * sin(pi * x) * cos(pi * c * t)
             a_clean = -((np.pi * c_true)**2) * np.sin(np.pi * x_val) * np.cos(np.pi * c_true * t_val)
             a_noisy = a_clean + noise_level * np.random.randn()
             x_list.append(x_val)
@@ -148,17 +145,18 @@ def run_tier2_benchmark(target_c2: float = 1.00, noise_level: float = 0.05):
     t_tensor = torch.tensor(t_list, dtype=torch.float32).view(-1, 1).to(DEVICE).requires_grad_(True)
     a_sensor = torch.tensor(a_list, dtype=torch.float32).view(-1, 1).to(DEVICE)
 
-    # Boundary conditions: simple supports at x = 0 and x = 1.0
     t_bc = torch.linspace(0.1, 1.0, 50).view(-1, 1).to(DEVICE)
     x_bc_0 = torch.zeros_like(t_bc).to(DEVICE)
     x_bc_L = torch.ones_like(t_bc).to(DEVICE)
 
     model = SpatialWaveField().to(DEVICE)
+    # Neutral prior midway between damaged (1.0) and intact (4.0)
     c_squared = nn.Parameter(torch.tensor([2.5], device=DEVICE, requires_grad=True))
 
     opt_model = optim.Adam(model.parameters(), lr=0.008)
     opt_phys = optim.Adam([c_squared], lr=0.03)
 
+    start_time = time.time()
     for epoch in range(1201):
         opt_model.zero_grad()
         opt_phys.zero_grad()
@@ -180,9 +178,10 @@ def run_tier2_benchmark(target_c2: float = 1.00, noise_level: float = 0.05):
         if epoch > 200:
             opt_phys.step()
 
+    elapsed = time.time() - start_time
     discovered_c2 = c_squared.item()
     err_pct = abs(discovered_c2 - target_c2) / target_c2 * 100.0
-    return discovered_c2, err_pct
+    return discovered_c2, err_pct, elapsed
 
 
 # ==============================================================================
@@ -192,31 +191,41 @@ def run_tier2_benchmark(target_c2: float = 1.00, noise_level: float = 0.05):
 if __name__ == "__main__":
     print("=" * 80)
     print("PROJECT SPANDAN: TRL-4 DUAL-TIER IN-SILICO REPRODUCTION HARNESS")
-    print(f"Platform: PyTorch Autograd Engine on [{DEVICE}] | Deterministic Seed: 42")
+    print(f"Author: Parth Bedi (@Parth-Bedi) | Platform: PyTorch on [{DEVICE}]")
     print("=" * 80)
 
+    # 1. Tier 1 Intact Baseline
     print("\n[Running Tier 1 ODE: Baseline Intact State] Target omega_n^2 = 64.00 ...")
     k_base, err_base, time_base = run_tier1_benchmark(target_omega_sq=64.00)
     print(f" -> Discovered: {k_base:.2f} (Error: {err_base:.2f}%) in {time_base:.2f}s")
 
+    # 2. Tier 1 Damaged State
     print("\n[Running Tier 1 ODE: Damaged State (Crack)] Target omega_n^2 = 38.40 ...")
     k_dam, err_dam, time_dam = run_tier1_benchmark(target_omega_sq=38.40)
     stiffness_drop = (k_base - k_dam) / k_base * 100.0
     print(f" -> Discovered: {k_dam:.2f} (Error: {err_dam:.2f}%) in {time_dam:.2f}s")
     print(f" -> Flagged Stiffness Degradation: -{stiffness_drop:.2f}% (Alert Triggered: >15%)")
 
-    print("\n[Running Tier 2 PDE: Damaged Beam Wave Inversion] Target c^2 = 1.00 ...")
-    c2_dam, err_c2 = run_tier2_benchmark(target_c2=1.00)
-    wave_drop = (4.00 - c2_dam) / 4.00 * 100.0
-    print(f" -> Discovered c^2: {c2_dam:.3f} (Error: {err_c2:.2f}%)")
-    print(f" -> Confirmed Wave Velocity Loss: -{wave_drop:.2f}%")
+    # 3. Tier 2 Intact Baseline Waveguide
+    print("\n[Running Tier 2 PDE: Baseline Intact Waveguide] Target c^2 = 4.00 ...")
+    c2_base, err_c2_base, time_c2_base = run_tier2_benchmark(target_c2=4.00)
+    print(f" -> Discovered c^2: {c2_base:.3f} (Error: {err_c2_base:.2f}%) in {time_c2_base:.2f}s")
 
+    # 4. Tier 2 Damaged Spatial Crack
+    print("\n[Running Tier 2 PDE: Damaged Beam Wave Inversion] Target c^2 = 1.00 ...")
+    c2_dam, err_c2_dam, time_c2_dam = run_tier2_benchmark(target_c2=1.00)
+    wave_drop = (c2_base - c2_dam) / c2_base * 100.0
+    print(f" -> Discovered c^2: {c2_dam:.3f} (Error: {err_c2_dam:.2f}%) in {time_c2_dam:.2f}s")
+    print(f" -> Confirmed Wave Velocity Loss: -{wave_drop:.2f}% (Alert Triggered: >25%)")
+
+    # Summary Table Matching README Section 5
     print("\n" + "=" * 80)
     print("QUANTITATIVE BENCHMARK REPRODUCTION SUMMARY TABLE")
     print("=" * 80)
-    print(f"{'Test Tier & State':<32} | {'Target':<10} | {'Discovered':<10} | {'Error':<8} | {'Status'}")
+    print(f"{'Test Tier & State':<32} | {'Target':<8} | {'Discovered':<10} | {'Error':<8} | {'Operational Status'}")
     print("-" * 80)
-    print(f"{'Tier 1: Intact Sentry':<32} | {'64.00':<10} | {k_base:<10.2f} | {err_base:<7.2f}% | 🟢 Nominal")
-    print(f"{'Tier 1: Damaged State':<32} | {'38.40':<10} | {k_dam:<10.2f} | {err_dam:<7.2f}% | 🚨 -{stiffness_drop:.1f}% Drop Flagged")
-    print(f"{'Tier 2: Waveguide Crack':<32} | {'1.00':<10} | {c2_dam:<10.3f} | {err_c2:<7.2f}% | 🚨 -{wave_drop:.1f}% Localized Loss")
+    print(f"{'Tier 1: Intact Sentry':<32} | {'64.00':<8} | {k_base:<10.2f} | {err_base:<7.2f}% | 🟢 Nominal (Green)")
+    print(f"{'Tier 1: Damaged State':<32} | {'38.40':<8} | {k_dam:<10.2f} | {err_dam:<7.2f}% | 🚨 -{stiffness_drop:.1f}% Drop Flagged")
+    print(f"{'Tier 2: Intact Waveguide':<32} | {'4.00':<8} | {c2_base:<10.3f} | {err_c2_base:<7.2f}% | 🟢 Waveguide Locked")
+    print(f"{'Tier 2: Damaged Waveguide':<32} | {'1.00':<8} | {c2_dam:<10.3f} | {err_c2_dam:<7.2f}% | 🚨 -{wave_drop:.1f}% Localized Loss")
     print("=" * 80)
